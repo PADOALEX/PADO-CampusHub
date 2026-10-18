@@ -5,7 +5,7 @@
 [![.NET 10 CI](https://github.com/PADOALEX/PADO-CampusHub/actions/workflows/ci.yml/badge.svg)](https://github.com/PADOALEX/PADO-CampusHub/actions/workflows/ci.yml)
 ![.NET](https://img.shields.io/badge/.NET-10-512bd4) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791) ![EF Core](https://img.shields.io/badge/EF%20Core-10-512bd4) ![License](https://img.shields.io/badge/license-MIT-blue)
 
-> **Verification note:** Source and configuration passed static checks; `.NET build`, tests and Docker start still need to run on a machine with the .NET 10 SDK. See [verification status](docs/VERIFICATION.md).
+> **Verification:** GitHub Actions has successfully restored and built the .NET 10 solution, passed all 6 unit and 2 API integration tests, and started PostgreSQL 17 to apply migrations, seed demo data, and run API smoke checks. [View passing CI run](https://github.com/PADOALEX/PADO-CampusHub/actions/runs/39129629321). Docker Compose deployment on a separate local machine is not covered by this CI run. See [verification status](docs/VERIFICATION.md).
 
 A portfolio-scale learning platform unifying three original C# exercises: student/course API, interactive database console manager and a 12-query LINQ reporting exercise. This is a **single shared schema, one source of truth and one .sln**, not three loosely joined programs.
 
@@ -159,6 +159,18 @@ The precise field conflicts, legacy database safety caveats and all 12 mapping d
 © 2026 PADO. MIT License.  
 **Maintainer:** [PADOALEX](https://github.com/PADOALEX)
 
-## Publishing to GitHub
+## Repository and updates
 
-Once local `dotnet build` and `dotnet test` pass, run `pwsh ./scripts/publish.ps1` (or `./scripts/publish.ps1` in Windows PowerShell) after `gh auth login`. This intentionally refuses to publish on a failing build or tests and creates **one `main` branch**. Repository creation requires GitHub CLI authorization; it cannot be performed offline from this source package.
+This project is hosted at [PADOALEX/PADO-CampusHub](https://github.com/PADOALEX/PADO-CampusHub), with `main` as the primary development branch. GitHub Actions runs build, tests and PostgreSQL smoke checks on pushes to `main` and on pull requests.
+
+Update an existing local checkout:
+
+```powershell
+cd E:\PADO-CampusHub
+git status
+git pull --ff-only origin main
+dotnet build PADO.CampusHub.sln -c Release
+dotnet test PADO.CampusHub.sln -c Release --no-build
+```
+
+Keep secrets in local environment settings; do not commit `.env` or connection strings. Check [verification notes](docs/VERIFICATION.md) before publishing as production-ready software.
