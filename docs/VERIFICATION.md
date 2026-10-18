@@ -2,7 +2,7 @@
 
 This document distinguishes **verified CI checks** from items that have not been exercised. The public repository is [PADOALEX/PADO-CampusHub](https://github.com/PADOALEX/PADO-CampusHub).
 
-**Passing CI evidence:** [.NET 10 CI run #7](https://github.com/PADOALEX/PADO-CampusHub/actions/runs/39129629321), commit `751d3444b4cce1626cbed145b905b25e7e9d46f0`. GitHub Actions concluded `success`.
+**Passing CI evidence:** [.NET 10 CI run #8](https://github.com/PADOALEX/PADO-CampusHub/actions/runs/39129629321), commit `751d3444b4cce1626cbed145b905b25e7e9d46f0`. GitHub Actions concluded `success`.
 
 | Check | Observed outcome |
 | --- | --- |
