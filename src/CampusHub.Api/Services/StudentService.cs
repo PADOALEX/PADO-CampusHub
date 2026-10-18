@@ -21,20 +21,26 @@ public sealed class StudentService(AppDbContext db)
         }
         if (olderThan.HasValue) q = q.Where(s => s.Age.HasValue && s.Age > olderThan.Value);
         var total = await q.CountAsync(ct);
-        var projected = q.Select(s => new StudentDto(s.Id, s.FirstName, s.LastName, s.Email, s.GroupName, s.Age,
-            s.Enrollments.Where(e => e.Status == EnrollmentStatus.Completed && e.Grade != null).Average(e => e.Grade) ?? s.LegacyAverageGrade));
         var ordered = (sort?.ToLowerInvariant(), descending) switch
         {
-            ("age", true) => projected.OrderByDescending(s => s.Age).ThenBy(s => s.Id),
-            ("age", false) => projected.OrderBy(s => s.Age).ThenBy(s => s.Id),
-            ("grade", true) => projected.OrderByDescending(s => s.AverageGrade).ThenBy(s => s.Id),
-            ("grade", false) => projected.OrderBy(s => s.AverageGrade).ThenBy(s => s.Id),
-            ("name", true) => projected.OrderByDescending(s => s.LastName).ThenByDescending(s => s.FirstName).ThenBy(s => s.Id),
-            ("name", false) => projected.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ThenBy(s => s.Id),
-            (_, true) => projected.OrderByDescending(s => s.Id),
-            _ => projected.OrderBy(s => s.Id)
+            ("age", true) => q.OrderByDescending(s => s.Age).ThenBy(s => s.Id),
+            ("age", false) => q.OrderBy(s => s.Age).ThenBy(s => s.Id),
+            ("grade", true) => q.OrderByDescending(s => s.Enrollments
+                .Where(e => e.Status == EnrollmentStatus.Completed && e.Grade != null)
+                .Average(e => e.Grade) ?? s.LegacyAverageGrade).ThenBy(s => s.Id),
+            ("grade", false) => q.OrderBy(s => s.Enrollments
+                .Where(e => e.Status == EnrollmentStatus.Completed && e.Grade != null)
+                .Average(e => e.Grade) ?? s.LegacyAverageGrade).ThenBy(s => s.Id),
+            ("name", true) => q.OrderByDescending(s => s.LastName).ThenByDescending(s => s.FirstName).ThenBy(s => s.Id),
+            ("name", false) => q.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ThenBy(s => s.Id),
+            (_, true) => q.OrderByDescending(s => s.Id),
+            _ => q.OrderBy(s => s.Id)
         };
-        return new PageDto<StudentDto>(await ordered.Skip((page - 1) * size).Take(size).ToListAsync(ct), page, size, total);
+        var items = await ordered.Skip((page - 1) * size).Take(size)
+            .Select(s => new StudentDto(s.Id, s.FirstName, s.LastName, s.Email, s.GroupName, s.Age,
+                s.Enrollments.Where(e => e.Status == EnrollmentStatus.Completed && e.Grade != null)
+                    .Average(e => e.Grade) ?? s.LegacyAverageGrade)).ToListAsync(ct);
+        return new PageDto<StudentDto>(items, page, size, total);
     }
 
     public Task<StudentDto?> GetAsync(int id, CancellationToken ct) => db.Students.AsNoTracking()

@@ -12,19 +12,21 @@ public sealed class CourseService(AppDbContext db)
         if (!string.IsNullOrWhiteSpace(search)) { var term = search.Trim().ToLowerInvariant(); q = q.Where(c => c.Title.ToLower().Contains(term)); }
         if (longerThan.HasValue) q = q.Where(c => c.DurationHours.HasValue && c.DurationHours > longerThan.Value);
         var total = await q.CountAsync(ct);
-        var projected = q.Select(c => new CourseDto(c.Id, c.Title, c.Description, c.DurationHours, c.Capacity,
-            c.Enrollments.Count(e => e.Status == EnrollmentStatus.Active)));
         var ordered = (sort?.ToLowerInvariant(), descending) switch
         {
-            ("duration", true) => projected.OrderByDescending(c => c.DurationHours).ThenBy(c => c.Id),
-            ("duration", false) => projected.OrderBy(c => c.DurationHours).ThenBy(c => c.Id),
-            ("title", true) => projected.OrderByDescending(c => c.Title).ThenBy(c => c.Id),
-            ("title", false) => projected.OrderBy(c => c.Title).ThenBy(c => c.Id),
-            (_, true) => projected.OrderByDescending(c => c.Id),
-            _ => projected.OrderBy(c => c.Id)
+            ("duration", true) => q.OrderByDescending(c => c.DurationHours).ThenBy(c => c.Id),
+            ("duration", false) => q.OrderBy(c => c.DurationHours).ThenBy(c => c.Id),
+            ("title", true) => q.OrderByDescending(c => c.Title).ThenBy(c => c.Id),
+            ("title", false) => q.OrderBy(c => c.Title).ThenBy(c => c.Id),
+            (_, true) => q.OrderByDescending(c => c.Id),
+            _ => q.OrderBy(c => c.Id)
         };
-        return new PageDto<CourseDto>(await ordered.Skip((page - 1) * size).Take(size).ToListAsync(ct), page, size, total);
+        var items = await ordered.Skip((page - 1) * size).Take(size)
+            .Select(c => new CourseDto(c.Id, c.Title, c.Description, c.DurationHours, c.Capacity,
+                c.Enrollments.Count(e => e.Status == EnrollmentStatus.Active))).ToListAsync(ct);
+        return new PageDto<CourseDto>(items, page, size, total);
     }
+
     public Task<CourseDto?> GetAsync(int id, CancellationToken ct) => db.Courses.AsNoTracking().Where(c => c.Id == id)
         .Select(c => new CourseDto(c.Id, c.Title, c.Description, c.DurationHours, c.Capacity,
             c.Enrollments.Count(e => e.Status == EnrollmentStatus.Active))).FirstOrDefaultAsync(ct);

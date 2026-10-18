@@ -31,7 +31,9 @@ public sealed class ApiTests : IClassFixture<CampusHubFactory>
         Assert.Equal("PMA-21", student.GroupName);
         var get = await _http.GetFromJsonAsync<StudentDto>($"/api/students/{student.Id}");
         Assert.Equal("Alice", get?.FirstName);
-        var list = await _http.GetFromJsonAsync<PageDto<StudentDto>>("/api/students?group=pma-21&sort=grade&descending=true");
+        var listResponse = await _http.GetAsync("/api/students?group=pma-21&sort=grade&descending=true");
+        Assert.True(listResponse.IsSuccessStatusCode, await listResponse.Content.ReadAsStringAsync());
+        var list = await listResponse.Content.ReadFromJsonAsync<PageDto<StudentDto>>();
         Assert.Contains(list!.Items, s => s.Id == student.Id);
         var duplicate = await _http.PostAsJsonAsync("/api/students", new StudentWriteRequest
         { FirstName = "Repeat", LastName = "Smith", Email = $"{suffix.ToUpperInvariant()}@example.org" });
@@ -54,7 +56,8 @@ public sealed class ApiTests : IClassFixture<CampusHubFactory>
         create.EnsureSuccessStatusCode();
         var course = (await create.Content.ReadFromJsonAsync<CourseDto>())!;
         var request = new EnrollmentRequest(s1.Id, course.Id);
-        Assert.Equal(HttpStatusCode.Created, (await _http.PostAsJsonAsync("/api/enrollments", request)).StatusCode);
+        var enrollmentResponse = await _http.PostAsJsonAsync("/api/enrollments", request);
+        Assert.True(enrollmentResponse.StatusCode == HttpStatusCode.Created, await enrollmentResponse.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.Conflict, (await _http.PostAsJsonAsync("/api/enrollments", request)).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await _http.PostAsJsonAsync("/api/enrollments", new EnrollmentRequest(s2.Id, course.Id))).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await _http.DeleteAsync($"/api/enrollments/{s1.Id}/{course.Id}")).StatusCode);
@@ -72,6 +75,7 @@ public sealed class CampusHubFactory : WebApplicationFactory<Program>
     public CampusHubFactory() => _connection.Open();
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, cfg) => cfg.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DefaultConnection"] = "Host=unused;Database=unused;Username=unused;Password=unused",

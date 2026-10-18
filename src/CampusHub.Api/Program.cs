@@ -36,7 +36,7 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
     };
     if (code == 500) app.Logger.LogError(error, "Unhandled API failure");
     context.Response.StatusCode = code;
-    await Results.Problem(title: code == 500 ? "Internal server error" : error is DomainProblem ? error.Message : "Database constraint violated",
+    await Results.Problem(title: code == 500 ? (app.Environment.IsEnvironment("Testing") ? error?.ToString() : "Internal server error") : error is DomainProblem ? error.Message : "Database constraint violated",
         statusCode: code).ExecuteAsync(context);
 }));
 if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
