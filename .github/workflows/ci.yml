@@ -33,6 +33,17 @@ jobs:
         run: dotnet build PADO.CampusHub.sln -c Release --no-restore
       - name: Tests (relational SQLite integration + unit)
         run: dotnet test PADO.CampusHub.sln -c Release --no-build --logger trx
+      - name: Diagnose EF Core model snapshot (temporary)
+        env:
+          ConnectionStrings__DefaultConnection: 'Host=localhost;Port=5432;Database=campushub;Username=campushub;Password=ci-only-password'
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.5
+          dotnet ef migrations add CIModelSyncProbe --project src/CampusHub.Infrastructure --startup-project src/CampusHub.Api --context AppDbContext --output-dir Migrations
+          echo '===== SNAPSHOT GENERATED ====='
+          cat src/CampusHub.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
+          echo '===== PROBE UP/DOWN ====='
+          cat src/CampusHub.Infrastructure/Migrations/*_CIModelSyncProbe.cs
+          exit 1
       - name: PostgreSQL migration and smoke test
         env:
           ConnectionStrings__DefaultConnection: 'Host=localhost;Port=5432;Database=campushub;Username=campushub;Password=ci-only-password'
