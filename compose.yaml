@@ -1,0 +1,32 @@
+name: pado-campushub
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: campushub
+      POSTGRES_USER: campushub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campushub -d campushub"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - campushub_pgdata:/var/lib/postgresql/data
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=campushub;Username=campushub;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      Database__MigrateOnStartup: "true"
+      SeedData__Enabled: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+volumes:
+  campushub_pgdata:

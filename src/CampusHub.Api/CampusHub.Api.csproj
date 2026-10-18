@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><TreatWarningsAsErrors>false</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../CampusHub.Reporting/CampusHub.Reporting.csproj" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.5" /><PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" /></ItemGroup>
+<ItemGroup><Content Include="../CampusHub.Infrastructure/Seed/students.txt" Link="Seed/students.txt" CopyToOutputDirectory="PreserveNewest" /></ItemGroup></Project>

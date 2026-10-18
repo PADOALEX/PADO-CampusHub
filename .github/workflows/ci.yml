@@ -1,0 +1,51 @@
+name: .NET 10 CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: campushub
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: campushub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U campushub -d campushub"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore PADO.CampusHub.sln
+      - name: Build
+        run: dotnet build PADO.CampusHub.sln -c Release --no-restore
+      - name: Tests (relational SQLite integration + unit)
+        run: dotnet test PADO.CampusHub.sln -c Release --no-build --logger trx
+      - name: PostgreSQL migration and smoke test
+        env:
+          ConnectionStrings__DefaultConnection: 'Host=localhost;Port=5432;Database=campushub;Username=campushub;Password=ci-only-password'
+          Database__MigrateOnStartup: 'true'
+          SeedData__Enabled: 'true'
+          ASPNETCORE_URLS: 'http://localhost:8080'
+        run: |
+          dotnet run --project src/CampusHub.Api/CampusHub.Api.csproj -c Release --no-build > /tmp/campushub.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true; cat /tmp/campushub.log' EXIT
+          for i in {1..40}; do
+            if curl -fsS http://localhost:8080/health; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:8080/api/students?pageSize=20 | grep -q '"totalCount":12'
+          curl -fsS 'http://localhost:8080/api/reports/legacy?group=PMA-21' | grep -q '"top3"'

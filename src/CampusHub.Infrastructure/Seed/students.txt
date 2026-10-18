@@ -1,0 +1,12 @@
+1;Aboba Boba;PMA-21;19;88.5
+2;Peter Grifin;PMA-21;20;75.0
+3;ZXC Valera;ZXC-22;19;95.2
+4;Michael Jordan;ZXC-22;17;82.4
+5;Bogus Bobus;CE-23;21;68.9
+6;Gugu Gaga;PMA-21;19;91.0
+7;Oleg Tinkov;CE-23;22;79.5
+8;Juliuc Cesar;ZXC-22;18;86.3
+9;Dima Kolyadenko;PMA-21;17;94.1
+10;Shaq O'Neal;CE-23;20;89.8
+11;Max Verstappen;ZXC-22;19;72.5
+12;Peter Parker;PMA-21;20;98.0

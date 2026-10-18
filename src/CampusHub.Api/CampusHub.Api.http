@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:8080
+GET {{baseUrl}}/health
+###
+GET {{baseUrl}}/api/students?page=1&pageSize=20&sort=grade&descending=true
+###
+GET {{baseUrl}}/api/courses?longerThan=40
+###
+GET {{baseUrl}}/api/reports/legacy?group=PMA-21
+###
+POST {{baseUrl}}/api/students
+Content-Type: application/json
+
+{"firstName":"Test","lastName":"Student","email":"new@campushub.example","groupName":"PMA-21","age":19}
+###
+POST {{baseUrl}}/api/enrollments
+Content-Type: application/json
+
+{"studentId":1,"courseId":1}

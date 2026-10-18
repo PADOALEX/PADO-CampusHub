@@ -1,0 +1,11 @@
+.git
+.github
+**/bin
+**/obj
+**/.vs
+**/*.user
+.env
+.env.*
+!.env.example
+**/*.db
+**/*.sqlite
