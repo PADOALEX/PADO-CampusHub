@@ -21,8 +21,19 @@ public sealed class CourseWriteRequest
     [Range(1, 100000)] public int Capacity { get; set; } = 30;
 }
 public sealed record CourseDto(int Id, string Title, string Description, int? DurationHours, int Capacity, int ActiveStudents);
-public sealed record EnrollmentRequest([property: Range(1, int.MaxValue)] int StudentId, [property: Range(1, int.MaxValue)] int CourseId);
-public sealed record GradeRequest([property: Range(typeof(decimal), "0", "100")] decimal Grade);
+public sealed class EnrollmentRequest
+{
+    public EnrollmentRequest() { }
+    public EnrollmentRequest(int studentId, int courseId) => (StudentId, CourseId) = (studentId, courseId);
+    [Range(1, int.MaxValue)] public int StudentId { get; set; }
+    [Range(1, int.MaxValue)] public int CourseId { get; set; }
+}
+public sealed class GradeRequest
+{
+    public GradeRequest() { }
+    public GradeRequest(decimal grade) => Grade = grade;
+    [Range(typeof(decimal), "0", "100")] public decimal Grade { get; set; }
+}
 public sealed record StatusRequest(EnrollmentStatus Status);
 public sealed record EnrollmentDto(int StudentId, int CourseId, EnrollmentStatus Status, decimal? Grade, DateTime EnrollmentDateUtc, string? StudentName = null, string? CourseTitle = null);
 public sealed record PageDto<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
