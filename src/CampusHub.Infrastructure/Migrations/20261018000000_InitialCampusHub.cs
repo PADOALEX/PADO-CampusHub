@@ -25,7 +25,7 @@ public sealed class InitialCampusHub : Migration
         {
             table.PrimaryKey("PK_Students", x => x.Id);
             table.CheckConstraint("CK_Student_Age", "\"Age\" IS NULL OR \"Age\" BETWEEN 1 AND 120");
-            table.CheckConstraint("CK_Student_Avg", "\"LegacyAverageGrade\" IS NULL OR \"LegacyAverageGrade\" BETWEEN 0 AND 100");
+            table.CheckConstraint("CK_Student_Avg", "\"LegacyAverageGrade\" IS NULL OR CAST(\"LegacyAverageGrade\" AS NUMERIC) BETWEEN 0 AND 100");
         });
         m.CreateTable("Courses", table => new
         {
@@ -52,7 +52,7 @@ public sealed class InitialCampusHub : Migration
             table.PrimaryKey("PK_Enrollments", x => new { x.StudentId, x.CourseId });
             table.ForeignKey("FK_Enrollments_Students_StudentId", x => x.StudentId, "Students", "Id", onDelete: ReferentialAction.Cascade);
             table.ForeignKey("FK_Enrollments_Courses_CourseId", x => x.CourseId, "Courses", "Id", onDelete: ReferentialAction.Cascade);
-            table.CheckConstraint("CK_Enrollment_Grade", "\"Grade\" IS NULL OR \"Grade\" BETWEEN 0 AND 100");
+            table.CheckConstraint("CK_Enrollment_Grade", "\"Grade\" IS NULL OR CAST(\"Grade\" AS NUMERIC) BETWEEN 0 AND 100");
         });
         m.CreateIndex("IX_Students_NormalizedEmail", "Students", "NormalizedEmail", unique: true);
         m.CreateIndex("IX_Enrollments_CourseId", "Enrollments", "CourseId");

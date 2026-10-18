@@ -10,9 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddNewtonsoftJson(o => o.SerializerSettings.Converters.Add(new StringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(cs)) throw new InvalidOperationException("Missing ConnectionStrings:DefaultConnection. Set it via environment variable or user-secrets.");
-builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(cs));
+builder.Services.AddDbContext<AppDbContext>((services, options) =>
+{
+    var connectionString = services.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString))
+        throw new InvalidOperationException("Missing ConnectionStrings:DefaultConnection. Set it via environment variable or user-secrets.");
+    options.UseNpgsql(connectionString);
+});
 builder.Services.AddScoped<StudentService>();
 builder.Services.AddScoped<CourseService>();
 builder.Services.AddScoped<EnrollmentService>();

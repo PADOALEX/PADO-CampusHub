@@ -22,7 +22,7 @@ public sealed class AppDbContextModelSnapshot : ModelSnapshot
             e.HasIndex(x => x.NormalizedEmail).IsUnique();
             e.Property(x => x.GroupName).HasMaxLength(60);
             e.Property(x => x.LegacyAverageGrade).HasPrecision(5, 2);
-            e.ToTable(t => { t.HasCheckConstraint("CK_Student_Age", "\"Age\" IS NULL OR \"Age\" BETWEEN 1 AND 120"); t.HasCheckConstraint("CK_Student_Avg", "\"LegacyAverageGrade\" IS NULL OR \"LegacyAverageGrade\" BETWEEN 0 AND 100"); });
+            e.ToTable(t => { t.HasCheckConstraint("CK_Student_Age", "\"Age\" IS NULL OR \"Age\" BETWEEN 1 AND 120"); t.HasCheckConstraint("CK_Student_Avg", "\"LegacyAverageGrade\" IS NULL OR CAST(\"LegacyAverageGrade\" AS NUMERIC) BETWEEN 0 AND 100"); });
         });
         modelBuilder.Entity<Course>(e =>
         {
@@ -38,7 +38,7 @@ public sealed class AppDbContextModelSnapshot : ModelSnapshot
             e.HasIndex(x => x.CourseId);
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
             e.Property(x => x.Grade).HasPrecision(5, 2);
-            e.ToTable(t => t.HasCheckConstraint("CK_Enrollment_Grade", "\"Grade\" IS NULL OR \"Grade\" BETWEEN 0 AND 100"));
+            e.ToTable(t => t.HasCheckConstraint("CK_Enrollment_Grade", "\"Grade\" IS NULL OR CAST(\"Grade\" AS NUMERIC) BETWEEN 0 AND 100"));
             e.HasOne(x => x.Student).WithMany(x => x.Enrollments).HasForeignKey(x => x.StudentId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Course).WithMany(x => x.Enrollments).HasForeignKey(x => x.CourseId).OnDelete(DeleteBehavior.Cascade);
         });
