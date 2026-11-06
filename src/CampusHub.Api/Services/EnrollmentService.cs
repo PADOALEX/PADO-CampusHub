@@ -58,10 +58,15 @@ public sealed class EnrollmentService(AppDbContext db, CourseService courses)
     public async Task<bool> SetGradeAsync(int studentId, int courseId, decimal grade, CancellationToken ct)
     {
         if (grade < 0 || grade > 100) throw new DomainProblem(400, "Grade must be between 0 and 100.");
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        if (await courses.LockCourseAsync(courseId, ct) is null) return false;
         var e = await db.Enrollments.FindAsync(new object[] { studentId, courseId }, ct);
         if (e is null) return false;
-        if (e.Status == EnrollmentStatus.Cancelled) throw new DomainProblem(409, "Cannot grade a cancelled enrollment.");
-        e.Grade = grade; await db.SaveChangesAsync(ct); return true;
+        if (e.Status != EnrollmentStatus.Active) throw new DomainProblem(409, "Only active enrollments can be graded.");
+        e.Grade = grade;
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return true;
     }
     public Task<List<EnrollmentDto>> ByStudentAsync(int id, CancellationToken ct) => db.Enrollments.AsNoTracking()
         .Where(e => e.StudentId == id).OrderBy(e => e.CourseId)

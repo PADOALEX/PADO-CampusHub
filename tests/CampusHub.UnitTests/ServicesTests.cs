@@ -43,10 +43,13 @@ public sealed class ServicesTests
         Assert.Equal(409, (await Assert.ThrowsAsync<DomainProblem>(() => service.EnrollAsync(first, default))).StatusCode);
         Assert.Equal(409, (await Assert.ThrowsAsync<DomainProblem>(() => service.EnrollAsync(second, default))).StatusCode);
         await service.SetStatusAsync(first.StudentId, first.CourseId, EnrollmentStatus.Cancelled, default);
+        Assert.Equal(409, (await Assert.ThrowsAsync<DomainProblem>(() => service.SetGradeAsync(first.StudentId, first.CourseId, 80m, default))).StatusCode);
         await service.EnrollAsync(second, default);
         Assert.Equal(409, (await Assert.ThrowsAsync<DomainProblem>(() => service.EnrollAsync(first, default))).StatusCode);
         Assert.True(await service.SetGradeAsync(second.StudentId, second.CourseId, 88m, default));
         Assert.True(await service.SetStatusAsync(second.StudentId, second.CourseId, EnrollmentStatus.Completed, default));
+        Assert.Equal(409, (await Assert.ThrowsAsync<DomainProblem>(() => service.SetGradeAsync(second.StudentId, second.CourseId, 99m, default))).StatusCode);
+        Assert.Equal(88m, (await db.Enrollments.FindAsync(second.StudentId, second.CourseId))!.Grade);
         await service.EnrollAsync(first, default);
         Assert.Equal(1, await db.Enrollments.CountAsync(e => e.Status == EnrollmentStatus.Active));
     }

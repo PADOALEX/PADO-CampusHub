@@ -5,7 +5,7 @@
 [![.NET 10 CI](https://github.com/PADOALEX/PADO-CampusHub/actions/workflows/ci.yml/badge.svg)](https://github.com/PADOALEX/PADO-CampusHub/actions/workflows/ci.yml)
 ![.NET](https://img.shields.io/badge/.NET-10-512bd4) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791) ![EF Core](https://img.shields.io/badge/EF%20Core-10-512bd4) ![License](https://img.shields.io/badge/license-MIT-blue)
 
-> **Verification:** GitHub Actions has successfully restored and built the .NET 10 solution, passed all 6 unit and 2 API integration tests, and started PostgreSQL 17 to apply migrations, seed demo data, and run API smoke checks. [View passing CI run](https://github.com/PADOALEX/PADO-CampusHub/actions/runs/39129629321). Docker Compose deployment on a separate local machine is not covered by this CI run. See [verification status](docs/VERIFICATION.md).
+> **Verification:** The workflow builds the .NET 10 solution, runs unit and SQLite API tests plus a real-PostgreSQL capacity concurrency test, and checks migrations and seeded API behavior. [View workflow runs](https://github.com/PADOALEX/PADO-CampusHub/actions/workflows/ci.yml). Docker Compose deployment on a separate local machine is not covered by this pipeline. See [verification status](docs/VERIFICATION.md).
 
 A portfolio-scale learning platform unifying three original C# exercises: student/course API, interactive database console manager and a 12-query LINQ reporting exercise. This is a **single shared schema, one source of truth and one .sln**, not three loosely joined programs.
 
@@ -134,9 +134,21 @@ More executable examples: [`CampusHub.Api.http`](src/CampusHub.Api/CampusHub.Api
 - Demo seed data comes from the exact 12-record legacy `students.txt` file. Synthetic emails use `.invalid`; no real student data is assumed.
 - Old `AverageGrade` is a **historical overall snapshot**. Grades tied to a course are stored on `Enrollment`. If any graded **completed** courses exist, reports use their average; otherwise they use the historical value.
 - `Active` registrations occupy seats. `Completed` and `Cancelled` release them. Completion is final; a cancelled enrollment may be restarted; an already active/completed registration is a conflict (HTTP 409).
+- Grades can only change while an enrollment is active. Grade and status changes acquire the same course row lock, preserving final completed results during concurrent requests.
 - Student/course DELETE is destructive with cascade; enrollment DELETE is non-destructive cancellation.
 - Classic report lists explicitly cap output (`limit` defaults to 1000) instead of loading the entire database; `isTruncated` signals omitted rows.
 - No login or role system is included. It is an **educational local portfolio backend**, not a publicly deployable personal-data service without authentication, authorization, backups and privacy review.
+
+## Testing
+
+The complete test run requires a disposable PostgreSQL instance whose user may create databases. The concurrency test creates and drops a uniquely named `campushub_test_*` database; it never resets the configured maintenance database.
+
+```powershell
+$env:CAMPUSHUB_TEST_CONNECTION = 'Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=YOUR_LOCAL_TEST_PASSWORD'
+dotnet test PADO.CampusHub.sln -c Release
+```
+
+SQLite report fixtures install an invariant decimal collation to match numeric database ordering under `en-US`, `uk-UA` and `de-DE`. The application's current culture remains unchanged. PostgreSQL tests verify that two simultaneous enrollment requests cannot both claim the final seat.
 
 ## Original source → new solution
 
@@ -156,7 +168,7 @@ The precise field conflicts, legacy database safety caveats and all 12 mapping d
 
 ---
 
-© 2026 PADO. MIT License.  
+© 2026 PADO. MIT License.
 **Maintainer:** [PADOALEX](https://github.com/PADOALEX)
 
 ## Repository and updates
