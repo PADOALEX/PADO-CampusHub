@@ -1,3 +1,4 @@
+using System.Globalization;
 using CampusHub.Domain;
 using CampusHub.Infrastructure;
 using CampusHub.Reporting;
@@ -9,12 +10,17 @@ namespace CampusHub.UnitTests;
 
 public sealed class ReportingTests
 {
-    [Fact]
-    public async Task LegacyReport_PreservesTop3AndGroupAverage()
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("uk-UA")]
+    [InlineData("de-DE")]
+    public async Task LegacyReport_PreservesTop3AndGroupAverage(string cultureName)
     {
+        using var culture = new TestCulture(cultureName);
         await using var conn = new SqliteConnection("Data Source=:memory:"); await conn.OpenAsync();
         var opts = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
         await using var db = new AppDbContext(opts); await db.Database.EnsureCreatedAsync();
+        conn.UseInvariantDecimalComparison();
         db.Students.AddRange(
             new Student { FirstName = "Ana", LastName = "A", Email = "ana@example.org", NormalizedEmail = "ANA@EXAMPLE.ORG", GroupName = "PMA-21", Age = 19, LegacyAverageGrade = 88.5m },
             new Student { FirstName = "Ben", LastName = "B", Email = "ben@example.org", NormalizedEmail = "BEN@EXAMPLE.ORG", GroupName = "PMA-21", Age = 17, LegacyAverageGrade = 75m },
@@ -30,12 +36,20 @@ public sealed class ReportingTests
         Assert.Equal("CE-23", report.BestGroup?.GroupName);
     }
 
+    private sealed class TestCulture : IDisposable
+    {
+        private readonly CultureInfo previous = CultureInfo.CurrentCulture;
+        public TestCulture(string name) => CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
+        public void Dispose() => CultureInfo.CurrentCulture = previous;
+    }
+
     [Fact]
     public async Task CompletedCourseGrade_ReplacesLegacySnapshot_AndCourseCountIsOnlyActive()
     {
         await using var conn = new SqliteConnection("Data Source=:memory:"); await conn.OpenAsync();
         var opts = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
         await using var db = new AppDbContext(opts); await db.Database.EnsureCreatedAsync();
+        conn.UseInvariantDecimalComparison();
         var student = new Student { FirstName = "Ada", LastName = "L", Email = "ada@test.org", NormalizedEmail = "ADA@TEST.ORG", LegacyAverageGrade = 55m };
         var course = new Course { Title = "Programming", DurationHours = 20, Capacity = 1 };
         db.Enrollments.Add(new Enrollment { Student = student, Course = course, Grade = 90m, Status = EnrollmentStatus.Completed });
